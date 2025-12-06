@@ -1,7 +1,7 @@
 /venv/
 __pycache__/
 ../.idea/
-.env
+deploy/.env
 /backend/db/linee.db
 /backend/db/parcheggi.db
 /backend/db/simulazioni.db

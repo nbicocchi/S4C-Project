@@ -1,14 +1,5 @@
 # 📍 Mobility Forecasting Project – Emilia Romagna (Italy)
 
-## 📌 Descrizione del progetto
-
-Il progetto analizza i flussi di mobilità in Emilia-Romagna utilizzando dati forniti da TIM, basati su movimenti tra aree censuarie (ACE) tramite segnali telefonici. L'obiettivo è:
-
-- **Visualizzazione**: Creazione di mappe interattive dei flussi.
-- **Event Detection**: Rilevazione di eventi e anomalie nel traffico.
-- **Analisi dei flussi**: Analisi e rappresentazione dei flussi di spostamento.
-- **Modellazione predittiva**: Stima del numero di spostamenti tra zone tramite regressori ML.
-
 ## 📁 Struttura del progetto
 
 | Cartella | Descrizione |
@@ -48,34 +39,3 @@ Il progetto analizza i flussi di mobilità in Emilia-Romagna utilizzando dati fo
 - Il modello utilizzato per l'API, dove i dati sono stati divisi considerando il 70%
 dei giorni per l’addestramento e il restante 30% per il test, utilizzando come feature:
 date, toid, weekday, week e weekend, questo ha portato a un MAE di 969 e un MAPE 8.92%.
-
-## ▶️ Esecuzione dell'API (`mobility_api`)
-
-1. Assicurarsi di avere Python ≥ 3.9 installato.
-2. Installare le dipendenze:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Avviare il server con uvicorn:
-   ```bash
-   uvicorn main:app --reload
-   ```
-4. Accedere alla documentazione interattiva:
-   - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-5. Endpoint disponibile:
-   ```
-   POST /predict
-   Body JSON:
-   {
-     "date": "YYYY-MM-DD",
-     "layerid": "ACE_ID"
-   }
-   ```
-## 🔁 Esempio completo via curl
-curl -X POST http://localhost:8080/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "date": "2025-06-01",
-    "layerid": "08|037|025|000|000"
-  }'
