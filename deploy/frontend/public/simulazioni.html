@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Simulazioni</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .sim-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .sim-table th, .sim-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .sim-table th {
+            background: #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .help-icon {
+            cursor: pointer;
+            color: #007bff;
+            margin-left: 5px;
+            position: relative;
+        }
+
+        .help-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            background: #222;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            left: 20px;
+            top: -5px;
+            z-index: 10;
+            white-space: pre-line;
+            font-size: 0.9em;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .form-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .form-container form {
+            width: 100%;
+            max-width: 600px;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .form-container input[type="text"],
+        .form-container input[type="number"],
+        .form-container select,
+        .form-container .select2-container--default .select2-selection--multiple,
+        .form-container .select2-container--default .select2-selection--single {
+            width: 100% !important;
+            padding: 8px 12px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            background: #fafbfc;
+            transition: border 0.2s;
+            min-height: 40px;
+        }
+
+        .form-container input[type="text"]:focus,
+        .form-container input[type="number"]:focus,
+        .form-container select:focus,
+        .form-container .select2-container--default .select2-selection--multiple:focus,
+        .form-container .select2-container--default .select2-selection--single:focus {
+            border: 1.5px solid #2d89ef;
+            outline: none;
+            background: #fff;
+        }
+    </style>
+</head>
+
+<!-- 1️⃣ jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- 2️⃣ Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<body class="is-preload">
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="map.html" class="image dozza"><img src="/images/thumbs/dozza.jpg" width="100%" alt="" /></a>
+					<h1 style="font-size: 3em"><strong>Dozza Turism</strong></h1>
+					<p>Applicazione gestita dall'amministrazione pubblica del Comune di Dozza, orientata all'ottimizzazione e gestione dei flussi turistici. </p>
+				</div>
+			</header>
+
+		<!-- Main -->
+			<div id="main">
+
+				<!-- One -->
+					<section class="intro">
+            			<header>
+                            <h2>Simulazioni effettuate</h2>
+                            <p>Qui puoi visualizzare le simulazioni effettuate, avviarne di nuove o esportare i risultati.</p>
+                        </header>
+                        <div class="content">
+                            <table class="sim-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Turisti</th>
+                                        <th>Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="simTableBody">
+                                    <!-- Verrà riempito via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+<!-- Two -->
+					<section id="two">
+                        <h2>Nuova simulazione</h2>
+                        <div class="form-container">
+                          <form id="simForm">
+                                <div class="form-group">
+                                    <label for="n_turisti">Numero turisti previsti</label>
+                                    <input type="number" name="n_turisti" id="n_turisti" required min="1">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="data">Data simulazione</label>
+                                    <input type="text" name="data" id="data" required pattern="\d{2}/\d{2}/\d{4}" placeholder="gg/mm/aaaa">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="parcheggi_esclusi">Parcheggi da escludere</label>
+                                    <select name="parcheggi_esclusi[]" id="parcheggi_esclusi" multiple class="select2" style="width: 100%;"></select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="linee_escluse" >Linee di trasporto da escludere</label>
+                                    <select name="linee_escluse[]" id="linee_escluse" multiple class="select2" style="width: 100%;"></select>
+                                </div>
+
+                                <div class="form-buttons">
+                                    <a href="#" class="button" onclick="document.getElementById('simForm').requestSubmit(); return false;">
+                                        Avvia simulazione
+                                    </a>
+                                    <a href="map.html" class="button">Torna alla mappa</a>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+            </div>
+
+    <!-- Script -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        async function avviaSimulazione(e) {
+            e.preventDefault();
+
+            const form = e.target;
+
+            const payload = {
+                n_turisti: parseInt(form.n_turisti.value),
+                data: form.data.value,
+                parcheggi_esclusi: [...form['parcheggi_esclusi[]'].selectedOptions].map(o=>o.value),
+                linee_escluse: [...form['linee_escluse[]'].selectedOptions].map(o=>o.value)
+            };
+
+            const resp = await fetch('/api/sim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                alert("Errore avvio simulazione"); return;
+            }
+
+            const result = await resp.json();
+            alert("✅ Simulazione avviata con successo!\nID: " + result.id);
+            location.reload();
+        }
+    </script>
+
+    <script>
+    $(document).ready(async function () {
+        // Inizializza Select2
+        $('.select2').select2({
+            width: '100%',
+            placeholder: "Seleziona...",
+            allowClear: true
+        });
+
+        // Carica dati simulazioni/parcheggi/linee
+        try {
+            const resp = await fetch("/api/simulazioni");
+            const data = await resp.json();
+
+            // Popola tabella sim
+            const tbody = document.getElementById("simTableBody");
+            tbody.innerHTML = "";
+            data.simulazioni.forEach(sim => {
+                const tr = document.createElement("tr");
+                tbody.innerHTML += `
+                <tr>
+                    <td>${sim.data}</td>
+                    <td>${sim.n_turisti}</td>
+                    <td>
+                        <a href="simulazione_dettaglio.html?id=${sim.id}" class="button small">Dettaglio</a>
+                        <button class="button small" onclick="eliminaSimulazione('${sim.id}')">Elimina</button>
+                        <button class="button small" onclick="esportaSimulazione('${sim.id}')">Esporta</button>
+                    </td>
+                </tr>`;
+            });
+
+            // --- Popola select parcheggi e linee ---
+            const parcheggiSelect = document.querySelector("select[name='parcheggi_esclusi[]']");
+            const lineeSelect = document.querySelector("select[name='linee_escluse[]']");
+
+            data.parcheggi.forEach(p => {
+                parcheggiSelect.innerHTML += `<option value="${p.id}">${p.nome} | ${p.comune}</option>`;
+            });
+
+            data.linee.forEach(l => {
+                lineeSelect.innerHTML += `<option value="${l.id}">${l.nome} | ${l.comune_partenza}</option>`;
+            });
+
+            // Reinizializza Select2 dopo aver caricato le opzioni
+            $('.select2').trigger('change.select2');
+
+        } catch (err) {
+            console.error("Errore caricamento simulazioni:", err);
+            alert("Errore nel caricamento dei dati delle simulazioni.");
+        }
+
+        document.getElementById("simForm").addEventListener("submit", avviaSimulazione);
+    });
+    </script>
+
+    <script>
+        async function eliminaSimulazione(simId) {
+            if (!confirm("Sei sicuro di voler eliminare questa simulazione?")) return;
+
+            const resp = await fetch(`/api/simulazioni/${simId}`, {
+                method: "DELETE"
+            });
+
+            if (resp.ok) {
+                alert("Simulazione eliminata!");
+                location.reload();
+            } else {
+                alert("Errore durante eliminazione");
+            }
+        }
+
+        async function esportaSimulazione(simId) {
+            const response = await fetch("/api/simulazioni/esporta", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({id: simId})
+            });
+
+            if (!response.ok) {
+                let errorMsg = "Errore durante l'esportazione";
+                try {
+                    const errJson = await response.json();
+                    if (errJson.error) errorMsg = errJson.error;
+                } catch {
+                    // risposta non-json
+                    const text = await response.text();
+                    console.error("Errore server:", text);
+                }
+                alert(errorMsg);
+                return;
+            }
+
+            // Scarica il file come blob
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `simulazione_${simId}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

@@ -5,14 +5,13 @@ import pandas as pd
 import logging
 import numpy as np
 from datetime import datetime
-from typing import Literal
 
 LOG = logging.getLogger('uvicorn.info')
 
 try:
-    model = joblib.load("mobility_model.pkl")
-    scaler = joblib.load("scaler.pkl")
-    label_encoder = joblib.load("label_encoder.pkl")
+    model = joblib.load("model/mobility_model.pkl")
+    scaler = joblib.load("model/scaler.pkl")
+    label_encoder = joblib.load("model/label_encoder.pkl")
     LOG.info("Model, scaler, encoder loaded.")
 except Exception as e:
     print("Errore nel caricamento del modello o dei preprocessori:", e)

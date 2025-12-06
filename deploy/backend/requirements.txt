@@ -1,0 +1,6 @@
+flask
+flask_login
+flask-restx
+gunicorn
+geopy
+requests

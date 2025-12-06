@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/db:/app/db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  mobility-prediction:
+    build: mobility-prediction
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"

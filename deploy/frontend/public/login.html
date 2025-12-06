@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Login - App Dozza</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="/assets/css/main.css" />
+    <style>
+
+        img {
+  				border-radius: 8px;
+			}
+
+    </style>
+</head>
+
+<body class="is-preload">
+
+    <!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="map.html" class="image dozza"><img src="/images/thumbs/dozza.jpg" width="100%" alt="" /></a>
+					<h1 style="font-size: 3em"><strong>Dozza Turism</strong></h1>
+					<p>Applicazione gestita dall'amministrazione pubblica del Comune di Dozza, orientata all'ottimizzazione e gestione dei flussi turistici. </p>
+				</div>
+			</header>
+
+		<!-- Main -->
+			<div id="main">
+
+				<!-- One -->
+					<section class="intro">
+            			<header>
+                			<h2>App Dozza - Login Utenti</h2>
+                			<p>Accedi per continuare</p>
+            			</header>
+            			<div class="content">
+						<!-- Messaggio di errore -->
+                        <div id="error-message" style="display:none; color:red; margin-bottom:10px;"></div>
+
+                        <!-- LOGIN FORM -->
+						<form id="loginForm" onsubmit="loginUser(event)">
+							<div class="fields">
+								<div class="field half">
+									<input type="text" name="email" id="email" placeholder="Email" required style="width: 70%;" />
+								</div>
+								<div class="field half">
+									<input type="password" name="password" id="password" placeholder="Password" required style="width: 70%; margin-top: 5px;"/>
+								</div>
+                    		</div>
+
+							<ul class="actions">
+								<li><input type="submit" value="Login" class="button primary" style="margin-top: 10px;"/></li>
+								<li><a href="admin_login.html" class="button" style="margin-top: 10px;">Amministrazione</a></li>
+							</ul>
+               			 </form>
+           			    </div>
+        		</section>
+
+				<!-- Two -->
+					<section id="two">
+						<h2>Funzionalità</h2>
+						<div class="row">
+							<article class="col-6 col-12-xsmall work-item">
+								<img src="/images/thumbs/parcheggio.jpg" style="width: 100%;"/>
+								<h3>Gestione Parcheggi</h3>
+								<p>Funzione che consente di aggiungere, modificare e eliminare i parcheggi di Dozza e dintorni.</p>
+							</article>
+							<article class="col-6 col-12-xsmall work-item">
+								<img src="/images/thumbs/autobus.jpg" style="width: 100%;"/>
+								<h3>Gestione Linee Trasporto</h3>
+								<p>Funzione che consente di aggiungere, modificare e eliminare le linee di Trasporto di Dozza e dintorni.</p>
+							</article>
+							<article class="col-6 col-12-xsmall work-item">
+								<img src="/images/thumbs/simulazione.jpg" style="width: 100%;"/>
+								<h3>Gestione Simulazioni</h3>
+								<p>Funzionalità che, in base al numero previsto di turisti, simula e suggerisce quali parcheggi aprire e quali linee di trasporto attivare per una gestione ottimale dei flussi.</p>
+							</article>
+							</div>
+                    </section>
+			</div>
+
+        <!-- Copyright -->
+        <div class="copyright">&copy; Dozza Turism. Design: <a href="https://html5up.net">HTML5 UP</a>.</div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/jquery.min.js"></script>
+    <script src="/assets/js/jquery.scrolly.min.js"></script>
+    <script src="/assets/js/browser.min.js"></script>
+    <script src="/assets/js/breakpoints.min.js"></script>
+    <script src="/assets/js/util.js"></script>
+    <script src="/assets/js/main.js"></script>
+    <!-- CUSTOM LOGIN SCRIPT -->
+    <script>
+        async function loginUser(event) {
+            event.preventDefault();
+
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            const resp = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await resp.json();
+
+            if (data.success) {
+                // Dopo il login redirect alla mappa
+                window.location.href = "mappa.html";
+            } else {
+                const box = document.getElementById("error-message");
+                box.textContent = data.error || "Errore durante il login";
+                box.style.display = "block";
+            }
+        }
+    </script>
+
+</body>
+
+</html>
