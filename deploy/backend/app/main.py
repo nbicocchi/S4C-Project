@@ -6,10 +6,8 @@ from .shared.utils import *
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "dev_only_key_change_me")
-
 app.register_blueprint(api)
 
-# Flask-Login setup - impostiamo la pagina di login manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = None
@@ -153,19 +151,6 @@ def api_admin_delete_user(user_id):
     conn.close()
 
     return jsonify({"success": True})
-
-#---------------- PARCHEGGI -----------------
-
-@app.get("/api/parcheggi")
-@login_required
-def api_parcheggi():
-    return jsonify(load_parcheggi())
-
-# ---------------- LINEE BUS -----------------
-@app.get("/api/linee")
-@login_required
-def api_linee():
-    return jsonify(load_linee())
 
 # ---------------- APP START -----------------
 if __name__ == '__main__':
