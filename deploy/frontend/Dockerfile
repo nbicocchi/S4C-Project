@@ -4,7 +4,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copia il frontend
-COPY public /usr/share/nginx/html/
+COPY public/ /usr/share/nginx/html/
 
 # Copia il file di root di nginx
 COPY nginx.conf /etc/nginx/nginx.conf

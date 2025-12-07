@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
 from geopy.distance import geodesic
-from deploy.backend.app.db.db import *
-from geoutils import to_float, sono_vicini
+from .utils import *
+from .geoutils import to_float, sono_vicini
 
 
 def run_simulazione(data, n_turisti, parcheggi_esclusi_ids, linee_escluse_ids):
