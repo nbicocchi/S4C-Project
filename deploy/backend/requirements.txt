@@ -1,6 +1,7 @@
 flask
 flask_login
 flask-restx
+flask-cors
 gunicorn
 geopy
 requests

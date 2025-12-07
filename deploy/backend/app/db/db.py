@@ -48,13 +48,17 @@ def load_parcheggi():
     conn.close()
     return [dict(r) for r in rows]
 
-
 def load_linee():
     conn = get_db_connection_linee()
     rows = conn.execute("SELECT * FROM linee").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
+def load_simulazioni():
+    conn = get_db_connection_simulazioni()
+    rows = conn.execute("SELECT * FROM simulazioni ORDER BY timestamp DESC").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 def load_simulazione(sim_id):
     """Load a simulation by ID and parse JSON fields."""

@@ -1,13 +1,20 @@
 from flask import Flask
 from flask_login import LoginManager
 from flask_restx import Api
-from .auth import auth_ns, User   # Import User class for login manager
-from .api import api_ns
-from .health import health_ns
+from flask_cors import CORS  # ✅ import CORS
+from .controller.auth import auth_ns, User   # Import User class for login manager
+from .controller.api import api_ns
+from .controller.health import health_ns
 
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = "dev_only_key_change_me"
+
+    # -------------------------
+    # Enable CORS for frontend
+    # -------------------------
+    # Allows requests from localhost:3000 and supports cookies
+    CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 
     # -------------------------
     # Setup Flask-Login

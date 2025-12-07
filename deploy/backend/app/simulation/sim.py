@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from geopy.distance import geodesic
-from db import *
+from deploy.backend.app.db.db import *
 from geoutils import to_float, sono_vicini
 
 

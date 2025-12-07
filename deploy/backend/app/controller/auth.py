@@ -2,27 +2,24 @@ import logging
 from flask_login import login_user, logout_user, login_required, UserMixin, current_user
 from flask_restx import Namespace, Resource, fields
 from flask import request
-from .shared.db import get_db_connection_utenti
+from ..db.db import get_db_connection_utenti
 
 # -------------------------
-# Setup logging
+# Logging setup
 # -------------------------
 logger = logging.getLogger("auth")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
-formatter = logging.Formatter(
-    "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
-handler.setFormatter(formatter)
+handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
 logger.addHandler(handler)
 
 # -------------------------
-# Create namespace for authentication
+# Namespace
 # -------------------------
 auth_ns = Namespace("auth", description="Authentication endpoints")
 
 # -------------------------
-# User Model for Swagger
+# Swagger Models
 # -------------------------
 login_model = auth_ns.model(
     "Login",
@@ -37,7 +34,7 @@ user_model = auth_ns.model(
     {
         "id": fields.Integer(description="User ID"),
         "email": fields.String(description="User email"),
-        "ruolo": fields.String(description="User role")
+        "ruolo": fields.String(description="User role"),
     }
 )
 
@@ -53,57 +50,65 @@ class User(UserMixin):
     @staticmethod
     def get_by_id(user_id):
         conn = get_db_connection_utenti()
-        user = conn.execute("SELECT * FROM utenti WHERE id=?", (user_id,)).fetchone()
+        row = conn.execute("SELECT * FROM utenti WHERE id=?", (user_id,)).fetchone()
         conn.close()
-        if user:
-            logger.info(f"Loaded user by id: {user_id}")
-            return User(id=user["id"], email=user["email"], ruolo=user["ruolo"])
-        logger.warning(f"User id {user_id} not found")
+        if row:
+            return User(id=row["id"], email=row["email"], ruolo=row["ruolo"])
         return None
 
 # -------------------------
-# Authentication Endpoints
+# LOGIN ENDPOINT
 # -------------------------
 @auth_ns.route("/login")
 class Login(Resource):
     @auth_ns.expect(login_model)
-    @auth_ns.marshal_with(user_model, code=200, skip_none=True)
+    @auth_ns.marshal_with(user_model, code=200)
     def post(self):
         """Authenticate user and return user info"""
         data = request.json
         email = data.get("email")
         password = data.get("password")
-        logger.info(f"Login attempt for email: {email}")
 
+        logger.info(f"Login attempt: {email}")
+
+        # Lookup user
         conn = get_db_connection_utenti()
-        user = conn.execute("SELECT * FROM utenti WHERE email=?", (email,)).fetchone()
+        row = conn.execute("SELECT * FROM utenti WHERE email=?", (email,)).fetchone()
         conn.close()
 
-        if not user or user["password"] != password:
-            logger.warning(f"Failed login attempt for email: {email}")
-            auth_ns.abort(401, "Invalid credentials")
+        # Validate credentials (cleartext password)
+        if not row or row["password"] != password:
+            logger.warning(f"Invalid credentials for: {email}")
+            auth_ns.abort(401, "Invalid email or password")
 
-        user_obj = User(id=user["id"], email=user["email"], ruolo=user["ruolo"])
+        user_obj = User(id=row["id"], email=row["email"], ruolo=row["ruolo"])
         login_user(user_obj)
-        logger.info(f"User logged in: {email}")
-        return {"id": user_obj.id, "email": user_obj.email, "ruolo": user_obj.ruolo}
 
+        logger.info(f"Login OK: {email}")
+        return user_obj
 
+# -------------------------
+# USER INFO (PROTECTED)
+# -------------------------
 @auth_ns.route("/userinfo")
 class UserInfo(Resource):
-    @login_required
+    method_decorators = [login_required]
+
     @auth_ns.marshal_with(user_model)
     def get(self):
         """Return current logged-in user info"""
-        logger.info(f"User info requested for: {current_user.email}")
-        return {"id": current_user.id, "email": current_user.email, "ruolo": current_user.ruolo}
+        logger.info(f"User info requested: {current_user.email}")
+        return current_user
 
-
+# -------------------------
+# LOGOUT (PROTECTED)
+# -------------------------
 @auth_ns.route("/logout")
 class Logout(Resource):
-    @login_required
+    method_decorators = [login_required]
+
     def post(self):
         """Logout current user"""
-        logger.info(f"User logged out: {current_user.email}")
+        logger.info(f"Logout: {current_user.email}")
         logout_user()
         return {"success": True}
