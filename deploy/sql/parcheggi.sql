@@ -34,19 +34,4 @@ INSERT INTO parcheggi VALUES(21,'Parcheggio in Via Serraglio','Imola',50,1,44.35
 INSERT INTO parcheggi VALUES(22,'Parcheggio mercato ortofrutticolo','Imola',212,1,44.3513599999999996,11.7105999999999994);
 INSERT INTO parcheggi VALUES(23,'Parcheggio Dozza','Dozza',55,1,44.3599519999999998,11.6327700000000007);
 INSERT INTO parcheggi VALUES(24,'Bus parking Dozza','Dozza',97,1,44.3588700000000031,11.6242999999999998);
-CREATE TABLE linee (
-    id INTEGER PRIMARY KEY,
-    nome TEXT NOT NULL,
-    comune_partenza TEXT NOT NULL,
-    partenza_lat REAL,
-    partenza_lng REAL,
-    comune_arrivo TEXT NOT NULL,
-    arrivo_lat REAL,
-    arrivo_lng REAL,
-    capienza INTEGER,
-    attiva BOOLEAN,
-    sabato BOOLEAN,
-    domenica BOOLEAN,
-    frequenza_giornaliera REAL
-);
 COMMIT;
