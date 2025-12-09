@@ -2,54 +2,55 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import joblib
 import pandas as pd
+from datetime import datetime
 import logging
 
-LOG = logging.getLogger('uvicorn.info')
+LOG = logging.getLogger("uvicorn.info")
 
+# Load model
 try:
     model = joblib.load("model/pedestrians_model.pkl")
     LOG.info("Model loaded.")
 except Exception as e:
-    print("Errore nel caricamento del modello o dei preprocessori:", e)
+    LOG.error("Errore nel caricamento del modello o dei preprocessori: %s", e)
 
+# Response model for health check
 class HealthCheck(BaseModel):
-    """Response model to validate and return when performing a health check."""
-
     status: str = "OK"
 
+# Request model for prediction
 class DailyPedestrianRequest(BaseModel):
-    giorno_settimana: int  # 0=Lunedì, 6=Dom
-    mese: int              # 1-12
-    giorno_mese: int       # 1-31
-    Special: int           # 0=normale, 1=giorno top
+    date: str       # format: YYYY-MM-DD
+    special: int    # 0=normale, 1=giorno top
 
-# Istanza dell'app FastAPI
+# FastAPI app instance
 app = FastAPI()
 
 @app.get("/health")
 def get_health() -> HealthCheck:
-    """
-    ## Perform a Health Check
-    Endpoint to perform a healthcheck on. This endpoint can primarily be used Docker
-    to ensure a robust container orchestration and management is in place. Other
-    services which rely on proper functioning of the API service will not deploy if this
-    endpoint returns any other HTTP status code except 200 (OK).
-    Returns:
-        HealthCheck: Returns a JSON response with the health status
-    """
     return HealthCheck(status="OK")
 
 @app.post("/predict")
 def predict_daily(req: DailyPedestrianRequest):
     try:
-        # Converte la richiesta in DataFrame
-        X = pd.DataFrame([req.dict()])
+        # Parse date and compute day of week
+        date_obj = datetime.strptime(req.date, "%Y-%m-%d")
+        giorno_settimana = date_obj.weekday()  # 0=Monday, 6=Sunday
+        mese = date_obj.month
+        giorno_mese = date_obj.day
 
-        # Predizione
+        # Prepare DataFrame for model
+        X = pd.DataFrame([{
+            "giorno_settimana": giorno_settimana,
+            "mese": mese,
+            "giorno_mese": giorno_mese,
+            "Special": req.special
+        }])
+
+        # Make prediction
         y_pred = model.predict(X)
 
-        # Restituisci risultato
-        return {"predicted_entrate": float(y_pred[0])}
+        return {"prediction": float(y_pred[0])}
 
     except Exception as e:
         return {"error": str(e)}

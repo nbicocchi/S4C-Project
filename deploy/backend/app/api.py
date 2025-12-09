@@ -1,11 +1,16 @@
 import os
+import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, send_file, current_app
 
-# === Shared utilities ===
 from .shared.geoutils import to_float
 from .shared.sim import run_simulazione
 from .shared.utils import *
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("predizioni-pedoni")
+
 
 api = Blueprint('api', __name__)
 
@@ -341,28 +346,24 @@ def api_predizioni_pedoni(num_days=30):
 
     previsioni = []
     for i in range(num_days):
-        giorno = start_date + timedelta(days=i)
-        date_str = giorno.strftime("%Y-%m-%d")
+        date = start_date + timedelta(days=i)
+        date_str = date.strftime("%Y-%m-%d")
 
         # Special=0
         payload0 = {
-            "giorno_settimana": giorno.weekday(),
-            "mese": giorno.month,
-            "giorno_mese": giorno.day,
-            "Special": 0
+            "date": date_str,
+            "special": 0
         }
         result0 = requests.post("http://pedestrian-prediction:8080/predict", json=payload0).json()
-        pred0 = result0.get("predicted_entrate")
+        pred0 = result0.get("prediction")
 
         # Special=1
         payload1 = {
-            "giorno_settimana": giorno.weekday(),
-            "mese": giorno.month,
-            "giorno_mese": giorno.day,
-            "Special": 1
+            "date": date_str,
+            "special": 1
         }
         result1 = requests.post("http://pedestrian-prediction:8080/predict", json=payload1).json()
-        pred1 = result1.get("predicted_entrate")
+        pred1 = result1.get("prediction")
 
         previsioni.append({
             "data": date_str,
