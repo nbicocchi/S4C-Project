@@ -1,12 +1,24 @@
 services:
+#  backend:
+#    build: backend-new
+#    ports:
+#      - "8080:8080"
+#    volumes:
+#      - ./backend/db:/app/db
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:8080/health/"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 3
+
   backend:
-    build: backend
+    build: backend-new
     ports:
       - "8080:8080"
     volumes:
-      - ./backend/db:/app/db
+      - ./backend-new/db:/db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health/" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -22,7 +34,7 @@ services:
       retries: 3
 
   frontend:
-    build: frontend
+    build: frontend-new
     depends_on:
       backend:
         condition: service_healthy

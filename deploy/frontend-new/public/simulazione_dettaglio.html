@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Dettaglio Simulazione</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .container-simulazione {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+        }
+        .col-mappa {
+            flex: 1;
+            min-width: 400px;
+        }
+        .col-liste {
+            flex: 1;
+            min-width: 300px;
+        }
+        #mapid {
+            height: 500px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        ul {
+            margin-bottom: 30px;
+        }
+
+        .banner {
+            background: #e3e3e3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="is-preload">
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="map.html" class="image dozza"><img src="/images/thumbs/dozza.jpg" width="100%" alt="" /></a>
+					<h1 style="font-size: 3em"><strong>Dozza Turism</strong></h1>
+					<p>Applicazione gestita dall'amministrazione pubblica del Comune di Dozza, orientata all'ottimizzazione e gestione dei flussi turistici. </p>
+				</div>
+			</header>
+
+		<!-- Main -->
+			<div id="main">
+
+				<!-- One -->
+					<section class="intro">
+                        <div id="banner" class="banner">
+                            Caricamento simulazione...
+                        </div>
+
+                        <div class="container-simulazione">
+                            <!-- Colonna mappa -->
+                            <div class="col-mappa">
+                                <div id="mapid"></div>
+                            </div>
+                            <!-- Colonna liste -->
+                            <div class="col-liste">
+                                <h3>Parcheggi da Aprire</h3>
+                                <ul id="lista-parcheggi">
+                                </ul>
+
+                                <h3>Linee utilizzate</h3>
+                                <ul id="lista-linee">
+                                </ul>
+                            </div>
+                        </div>
+                        <div style="text-align:center; margin: 30px 0;">
+                            <a href="#" style="margin-top: 10px; align-items: center;" class="button" onclick="esportaSimulazione(); return false;">Esporta dati simulazione</a>
+                        </div>
+
+                        <div style="text-align:center; margin-bottom: 30px;">
+                            <a href="simulazioni.html" class="button">Torna all'elenco simulazioni</a>
+                            <a href="map.html" class="button">Torna alla mappa</a>
+                        </div>
+                    </section>
+
+                <!-- Two -->
+					<section id="two">
+                        <!-- Parcheggi esclusi -->
+                        <h3>Parcheggi esclusi dalla simulazione</h3>
+                        <table id="tab-parcheggi-esclusi" style="margin-bottom: 20px;">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Comune</th>
+                                    <th>Capienza</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                        <!-- Linee escluse -->
+                        <h3>Linee di trasporto escluse dalla simulazione</h3>
+                        <table id="tab-linee-escluse">
+                            <thead>
+                                <tr>
+                                    <th>Nome linea</th>
+                                    <th>P. partenza</th>
+                                    <th>P. arrivo</th>
+                                    <th>Capienza</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </section>
+            </div>
+
+    <script>
+        // ---- UTIL ----
+        function parseCoord(v) { return parseFloat(String(v).replace(',', '.')); }
+
+        function getSimIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get("id");
+        }
+
+        // ---- GLOBAL SIM DATA ----
+        let SIM = null;
+
+        // ---- CARICAMENTO SIMULAZIONE ----
+        async function loadSimulation() {
+            const simId = getSimIdFromURL();
+            if (!simId) {
+                alert("ID simulazione non fornito.");
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/api/simulazioni/${simId}`);
+                if (!resp.ok) throw new Error("Errore API");
+                SIM = await resp.json();
+
+                renderSimulation();
+                initMap();
+
+            } catch (err) {
+                console.error("Errore simulazione:", err);
+                alert("Errore nel caricamento della simulazione.");
+            }
+        }
+
+        // ---- RENDER DATI ----
+        function renderSimulation() {
+            document.getElementById("banner").innerHTML = `
+                <strong>Data simulazione:</strong> ${SIM.data} &nbsp; | &nbsp;
+                <strong>Turisti previsti:</strong> ${SIM.n_turisti}
+            `;
+
+            // Parcheggi aperti
+            const listaP = document.getElementById("lista-parcheggi");
+            listaP.innerHTML = "";
+            SIM.parcheggi_usati.forEach(p => {
+                const li = document.createElement("li");
+                li.textContent = `${p.nome} (${p.comune}) — Capienza: ${p.capienza}`;
+                listaP.appendChild(li);
+            });
+
+            // Linee utilizzate
+            const listaL = document.getElementById("lista-linee");
+            listaL.innerHTML = "";
+            SIM.linee_usate.forEach(l => {
+                const li = document.createElement("li");
+                li.innerHTML = `${l.nome}<br>Da: ${l.comune_partenza} → ${l.comune_arrivo}`;
+                listaL.appendChild(li);
+            });
+
+            // Parcheggi esclusi
+            const tbodyPar = document.querySelector("#tab-parcheggi-esclusi tbody");
+            tbodyPar.innerHTML = "";
+            if (SIM.parcheggi_esclusi.length === 0) {
+                tbodyPar.innerHTML = `<tr><td colspan="3">Nessun parcheggio escluso</td></tr>`;
+            } else {
+                SIM.parcheggi_esclusi.forEach(p => {
+                    tbodyPar.innerHTML += `
+                        <tr>
+                            <td>${p.nome}</td>
+                            <td>${p.comune}</td>
+                            <td>${p.capienza}</td>
+                        </tr>`;
+                });
+            }
+
+            // Linee escluse
+            const tbodyLin = document.querySelector("#tab-linee-escluse tbody");
+            tbodyLin.innerHTML = "";
+            if (SIM.linee_escluse.length === 0) {
+                tbodyLin.innerHTML = `<tr><td colspan="4">Nessuna linea esclusa</td></tr>`;
+            } else {
+                SIM.linee_escluse.forEach(l => {
+                    tbodyLin.innerHTML += `
+                        <tr>
+                            <td>${l.nome}</td>
+                            <td>${l.partenza_comune}</td>
+                            <td>${l.arrivo_comune}</td>
+                            <td>${l.capienza}</td>
+                        </tr>`;
+                });
+            }
+        }
+
+        // ---- MAPPA ----
+        function initMap() {
+            const map = L.map('mapid').setView([44.3511, 11.6519], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Parcheggi usati
+            SIM.parcheggi_usati.forEach(p => {
+                L.marker([parseCoord(p.latitudine), parseCoord(p.longitudine)]).addTo(map)
+                    .bindPopup(`${p.nome} (${p.comune})`);
+            });
+
+            // Linee utilizzate
+            SIM.parcheggi_usati.forEach(p => {
+                p.linee_usate.forEach(lu => {
+                    const linea = SIM.linee_usate.find(x => x.id === lu.linea_id);
+                    if (!linea) return;
+
+                    L.polyline([
+                        [parseCoord(linea.partenza_lat), parseCoord(linea.partenza_lng)],
+                        [parseCoord(linea.arrivo_lat), parseCoord(linea.arrivo_lng)]
+                    ], { color: "blue", weight: 3 })
+                    .addTo(map)
+                    .bindPopup(`Linea ${linea.nome}<br>Turisti: ${lu.turisti}`);
+                });
+            });
+        }
+
+        async function esportaSimulazione() {
+            const simId = getSimIdFromURL();
+
+            try {
+                const resp = await fetch(`/api/simulazioni/esporta`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({id: simId})
+                });
+
+                if (!resp.ok) throw new Error("Errore esportazione");
+
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `simulazione_${simId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+
+            } catch (err) {
+                console.error(err);
+                alert("Errore durante l'esportazione.");
+            }
+        }
+
+        // ---- START ----
+        loadSimulation();
+    </script>
+</body>
+</html>

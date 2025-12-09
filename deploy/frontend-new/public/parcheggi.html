@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gestione Parcheggi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="/assets/css/main.css" />
+    <style>
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 20px auto; }
+        th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
+        input[type="text"], input[type="number"] { width: 100%; }
+        button { padding: 5px 10px; margin: 2px; }
+        #aggiungiForm { margin: 20px auto; width: 80%; }
+        #aggiungiForm input, #aggiungiForm select {
+            display: inline-block;
+            vertical-align: middle;
+            height: 30px;
+            font-size: 14px;
+            padding: 5px;
+            margin-right: 10px;
+        }
+        #messagesArea {
+            width: 80%;
+            margin: 20px auto 0 auto;
+        }
+        .perm-message {
+            position: relative;
+            margin-bottom: 10px;
+            padding: 16px 40px 16px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #c3e6cb;
+            background: #d4edda;
+            color: #155724;
+            animation: fadein 0.2s;
+        }
+        .perm-message.error {
+            border: 1px solid #f5c6cb;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .perm-message .close-btn {
+            position: absolute;
+            right: 12px;
+            top: 8px;
+            font-size: 18px;
+            color: inherit;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        @keyframes fadein {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Fix per input nella tabella */
+        #tabellaParcheggi input[type="number"],
+        #tabellaParcheggi input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 4px;
+            margin: 0;
+            font-size: 15px;
+        }
+
+        button {
+            transition-duration: 0.4s;
+            border: none;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #04AA6D; /* Green */
+            color: white;
+        }
+
+        /* Centra il bottone in fondo */
+        .center-btn {
+            display: flex;
+            justify-content: center;
+            margin: 2em 0 2em 0;
+        }
+    </style>
+</head>
+
+<body class="is-preload">
+
+    <!-- Header -->
+    <header id="header" style="width:25%;">
+        <div class="inner">
+            <a href="map.html" class="image dozza"><img src="/images/thumbs/dozza.jpg" width="100%" alt="" /></a>
+            <h1 style="font-size: 2em"><strong>Dozza Turism</strong></h1>
+            <p>Applicazione gestita dall'amministrazione pubblica del Comune di Dozza, orientata all'ottimizzazione e gestione dei flussi turistici. </p>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <div id="main" style="margin-left: 25%; max-width: 90em; padding: 8em 4em 4em 4em; width: calc(100% - 25%);">
+
+        <!-- One -->
+        <section class="intro">
+            <header>
+                <h2>Gestione Parcheggi</h2>
+                <p>Aggiungi Parcheggio</p>
+            </header>
+            <div class="content">
+                <div id="aggiungiForm" style="width: 80%; margin: 20px auto; border: 1px solid #ccc; padding: 15px; border-radius: 10px; background: #f9f9f9;text-align: center;">
+                    <input type="text" id="nome" placeholder="Nome parcheggio" style="height: 40px;"/>
+                    <input type="text" id="comune" placeholder="Comune" style="height: 40px;"/>
+                    <input type="text" id="latitudine" placeholder="Latitudine" style="height: 40px;"/>
+                    <input type="text" id="longitudine" placeholder="Longitudine" style="height: 40px;"/>
+                    <input type="number" id="capienza" placeholder="Capienza" min="0" style="height: 40px;"/>
+                    <select id="attivo" style="height: 40px;">
+                        <option value="true">Attivo</option>
+                        <option value="false">Non attivo</option>
+                    </select>
+                    <a href="#" style="margin-top: 10px; align-items: center;" class="button" onclick="aggiungiParcheggio(); return false;">Inserisci</a>
+                </div>
+            </div>
+        </section>
+        <!-- Two -->
+        <section id="two">
+            <div id="dettagliParcheggio" style="display:none; width:100%; margin: 20px auto; border: 1px solid #ccc; padding: 15px; border-radius: 10px; background: #f9f9f9;">
+                <h3>Dettagli Parcheggio</h3>
+                <p><strong>Nome:</strong> <span id="dettNome"></span></p>
+                <p><strong>Comune:</strong> <span id="dettComune"></span></p>
+                <p><strong>Latitudine:</strong> <span id="dettLatitudine"></span></p>
+                <p><strong>Longitudine:</strong> <span id="dettLongitudine"></span></p>
+                <p><strong>Capienza:</strong> <span id="dettCapienza"></span></p>
+                <p><strong>Attivo:</strong> <span id="dettAttivo"></span></p>
+                <button onclick="nascondiDettagli()">Chiudi</button>
+            </div>
+            <!-- Area messaggi permanenti -->
+            <div id="messagesArea"></div>
+            <table id="tabellaParcheggi">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Comune</th>
+                        <th style="width:90px">Capienza</th>
+                        <th style="width:115px">Attivo</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Bottone Torna alla mappa centrato in fondo -->
+        <div class="center-btn">
+            <a href="map.html" class="button">Torna alla mappa</a>
+        </div>
+    </div>
+    </body>
+
+    <script>
+    const baseURL = '/api/parcheggi';
+
+    // Mostra un messaggio permanente sopra la tabella
+    function showPermMessage(message, type='success') {
+        const area = document.getElementById('messagesArea');
+        const msg = document.createElement('div');
+        msg.className = 'perm-message' + (type === 'error' ? ' error' : '');
+        msg.innerHTML = `<button class="close-btn" onclick="this.parentNode.remove()">×</button>${message}`;
+        area.appendChild(msg);
+    }
+
+    // Modale di conferma personalizzata
+    function customConfirm(message) {
+        return new Promise((resolve) => {
+            // Overlay
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = 0;
+            overlay.style.left = 0;
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0,0,0,0.3)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = 9999;
+
+            // Box
+            const box = document.createElement('div');
+            box.style.background = '#fff';
+            box.style.padding = '24px 32px';
+            box.style.borderRadius = '10px';
+            box.style.boxShadow = '0 2px 12px rgba(0,0,0,0.2)';
+            box.style.textAlign = 'center';
+            box.innerHTML = `<div style="margin-bottom:18px;font-size:18px;">${message}</div>`;
+
+            // Bottoni
+            const btnYes = document.createElement('button');
+            btnYes.textContent = 'Sì';
+            btnYes.style.margin = '0 10px';
+            btnYes.onclick = () => { document.body.removeChild(overlay); resolve(true); };
+
+            const btnNo = document.createElement('button');
+            btnNo.textContent = 'No';
+            btnNo.style.margin = '0 10px';
+            btnNo.onclick = () => { document.body.removeChild(overlay); resolve(false); };
+
+            box.appendChild(btnYes);
+            box.appendChild(btnNo);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+        });
+    }
+
+    // Carica e mostra i parcheggi
+    async function caricaParcheggi() {
+        const res = await fetch(baseURL);
+        const data = await res.json();
+        const tbody = document.querySelector('#tabellaParcheggi tbody');
+        tbody.innerHTML = '';
+
+        data.forEach(p => {
+            const tr = document.createElement('tr');
+
+            // Nome
+            const nomeTd = document.createElement('td');
+            const nomeInput = document.createElement('input');
+            nomeInput.type = 'text';
+            nomeInput.value = p.nome || '';
+            nomeTd.appendChild(nomeInput);
+            tr.appendChild(nomeTd);
+
+            // Comune
+            const comuneTd = document.createElement('td');
+            const comuneInput = document.createElement('input');
+            comuneInput.type = 'text';
+            comuneInput.value = p.comune || '';
+            comuneTd.appendChild(comuneInput);
+            tr.appendChild(comuneTd);
+
+            // Capienza
+            const capienzaTd = document.createElement('td');
+            const capienzaInput = document.createElement('input');
+            capienzaInput.type = 'number';
+            capienzaInput.min = 0;
+            capienzaInput.value = p.capienza || 0;
+            capienzaTd.appendChild(capienzaInput);
+            tr.appendChild(capienzaTd);
+
+            // Attivo (select)
+            const attivoTd = document.createElement('td');
+            const attivoSelect = document.createElement('select');
+            ['true','false'].forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val === 'true' ? 'Attivo' : 'Non attivo';
+                attivoSelect.appendChild(opt);
+            });
+            attivoSelect.value = p.attivo ? 'true' : 'false';
+            attivoTd.appendChild(attivoSelect);
+            tr.appendChild(attivoTd);
+
+            // Azioni
+            const azioniTd = document.createElement('td');
+            // Dettagli
+            const btnDettagli = document.createElement('button');
+            btnDettagli.textContent = 'Dettagli';
+            btnDettagli.onclick = () => mostraDettagli(p.id);
+            azioniTd.appendChild(btnDettagli);
+            // Salva
+            const btnSalva = document.createElement('button');
+            btnSalva.textContent = 'Salva';
+            btnSalva.onclick = async () => {
+                await salvaParcheggio(p.id, {
+                    nome: nomeInput.value,
+                    comune: comuneInput.value,
+                    latitudine: p.latitudine,
+                    longitudine: p.longitudine,
+                    capienza: parseInt(capienzaInput.value),
+                    attivo: attivoSelect.value === 'true'
+                });
+                showPermMessage('Parcheggio aggiornato!');
+            };
+            azioniTd.appendChild(btnSalva);
+            // Elimina
+            const btnElimina = document.createElement('button');
+            btnElimina.textContent = 'Elimina';
+            btnElimina.onclick = async () => {
+                const conferma = await customConfirm(`Sei sicuro di voler eliminare il parcheggio "${p.nome}"?`);
+                if (conferma) {
+                    await eliminaParcheggio(p.id);
+                    showPermMessage('Parcheggio eliminato!', 'error');
+                }
+            };
+            azioniTd.appendChild(btnElimina);
+
+            tr.appendChild(azioniTd);
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Funzione per caricare e mostrare i dettagli di un parcheggio specifico
+    async function mostraDettagli(id) {
+        const res = await fetch(`/api/parcheggi/${id}`);
+        if (!res.ok) {
+            return showPermMessage('Parcheggio non trovato', 'error');
+        }
+        const data = await res.json();
+
+        document.getElementById('dettNome').textContent = data.nome;
+        document.getElementById('dettComune').textContent = data.comune;
+        document.getElementById('dettLatitudine').textContent = data.latitudine;
+        document.getElementById('dettLongitudine').textContent = data.longitudine;
+        document.getElementById('dettCapienza').textContent = data.capienza;
+        document.getElementById('dettAttivo').textContent = data.attivo;
+
+        document.getElementById('dettagliParcheggio').style.display = 'block';
+    }
+
+    function nascondiDettagli() {
+        document.getElementById('dettagliParcheggio').style.display = 'none';
+    }
+
+    // Funzione salva parcheggio (PUT)
+    async function salvaParcheggio(id, dati) {
+        const res = await fetch(`${baseURL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dati)
+        });
+        if (res.ok) {
+            caricaParcheggi();
+        } else {
+            showPermMessage('Errore aggiornamento', 'error');
+        }
+    }
+
+    // Funzione elimina parcheggio (DELETE)
+    async function eliminaParcheggio(id) {
+        const res = await fetch(`${baseURL}/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            caricaParcheggi();
+        } else {
+            showPermMessage('Errore eliminazione', 'error');
+        }
+    }
+
+    // Funzione aggiungi parcheggio (POST)
+    async function aggiungiParcheggio() {
+        const nome = document.getElementById('nome').value.trim();
+        const comune = document.getElementById('comune').value.trim();
+        const latitudine = document.getElementById('latitudine').value.trim();
+        const longitudine = document.getElementById('longitudine').value.trim();
+        const capienza = parseInt(document.getElementById('capienza').value);
+        const attivo = document.getElementById('attivo').value === 'true';
+
+        if (!nome || !comune || !latitudine || !longitudine || isNaN(capienza)) {
+            showPermMessage('Inserisci tutti i dati correttamente', 'error');
+            return;
+        }
+
+
+        const res = await fetch(baseURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, comune, latitudine, longitudine, capienza, attivo })
+        });
+        if (res.ok) {
+            await caricaParcheggi();
+            showPermMessage('Parcheggio aggiunto!');
+            // form reset
+            document.getElementById('nome').value = '';
+            document.getElementById('comune').value = '';
+            document.getElementById('latitudine').value = '';
+            document.getElementById('longitudine').value = '';
+            document.getElementById('capienza').value = '';
+            document.getElementById('attivo').value = 'true';
+        } else {
+            showPermMessage('Errore aggiunta', 'error');
+        }
+    }
+
+    // Carica dati all'avvio
+    caricaParcheggi();
+    </script>
+</html>
