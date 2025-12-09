@@ -335,17 +335,54 @@ def api_predizioni():
 
     previsioni = []
     for i in range(delta):
-        giorno = start_date + timedelta(days=i)
-        date_str = giorno.strftime("%Y-%m-%d")
-        payload = {"date": date_str, "layerid": "08|037|025|000|000"}
-        giorno_result = call_mobility_api(
-            url="http://mobility-prediction:8080/predict",
-            payload=payload,
-            retries=3,
-            delay=1,
-            timeout=5
-        )
-        turisti = giorno_result["data"].get("prediction") if giorno_result["success"] else None
-        previsioni.append({"data": date_str, "turisti": turisti})
+        date_str = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
+        payload = {"date": date_str,
+                   "layerid": "08|037|025|000|000"}
+        result = requests.post("http://mobility-prediction:8080/predict", json=payload).json()
+        previsioni.append({"data": date_str, "turisti": result.get("prediction")})
 
     return jsonify({"anno": anno, "mese": mese, "previsioni": previsioni})
+
+
+@api.post("/api/predizioni-pedoni")
+def api_predizioni_pedoni(num_days=30):
+    """
+    Call the DailyPedestrianRequest service twice per day (Special=0 and Special=1)
+    and produce a final structure with two separate fields.
+    """
+
+    start_date = datetime.strptime(request.json, "%Y-%m-%d")
+
+    previsioni = []
+
+    for i in range(num_days):
+        giorno = start_date + timedelta(days=i)
+        date_str = giorno.strftime("%Y-%m-%d")
+
+        # Special=0
+        payload0 = {
+            "giorno_settimana": giorno.weekday(),
+            "mese": giorno.month,
+            "giorno_mese": giorno.day,
+            "Special": 0
+        }
+        result0 = requests.post("http://pedestrian-prediction:8080/predict", json=payload0).json()
+        pred0 = result0.get("predicted_entrate")
+
+        # Special=1
+        payload1 = {
+            "giorno_settimana": giorno.weekday(),
+            "mese": giorno.month,
+            "giorno_mese": giorno.day,
+            "Special": 1
+        }
+        result1 = requests.post("http://pedestrian-prediction:8080/predict", json=payload1).json()
+        pred1 = result1.get("predicted_entrate")
+
+        previsioni.append({
+            "data": date_str,
+            "prediction_normal": pred0,
+            "prediction_special": pred1
+        })
+
+    return previsioni

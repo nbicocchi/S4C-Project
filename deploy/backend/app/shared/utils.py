@@ -74,39 +74,3 @@ def load_simulazione(sim_id):
         sim[key] = safe_json_loads(sim.get(key))
 
     return sim
-
-def call_mobility_api(url, payload, retries=3, delay=2, timeout=5):
-    """
-    Chiama mobility_api con retry automatici, timeout e gestione errori solida.
-
-    :param url: URL completo (es. "http://mobility_api:8080/predict")
-    :param payload: oggetto JSON da inviare
-    :param retries: numero di tentativi
-    :param delay: attesa tra un tentativo e l’altro
-    :param timeout: timeout della richiesta in secondi
-    :return: dict con "success", "data" oppure "error"
-    """
-    for attempt in range(1, retries + 1):
-        try:
-            res = requests.post(url, json=payload, timeout=timeout)
-
-            if res.status_code == 200:
-                return {"success": True, "data": res.json()}
-
-            # errore HTTP (404, 500…)
-            return {
-                "success": False,
-                "error": f"Mobility API ha risposto con HTTP {res.status_code}",
-                "details": res.text,
-            }
-
-        except requests.exceptions.RequestException as e:
-            # ultimo tentativo → errore finale
-            if attempt == retries:
-                return {"success": False, "error": str(e)}
-
-            # attendo e ritento
-            time.sleep(delay)
-
-    # fallback (non dovrebbe mai arrivare qui)
-    return {"success": False, "error": "Errore sconosciuto nella chiamata a mobility_api"}
