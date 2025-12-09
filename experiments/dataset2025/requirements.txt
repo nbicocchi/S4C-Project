@@ -1,0 +1,12 @@
+geopandas==1.1.1
+holidays==0.85
+matplotlib==3.10.7
+meteostat==1.7.6
+numpy==2.3.5
+pandas==2.3.3
+psycopg2-binary==2.9.11
+scikit_learn==1.7.2
+seaborn==0.13.2
+SQLAlchemy==2.0.44
+streamlit==1.51.0
+tqdm==4.67.1
