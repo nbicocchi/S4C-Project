@@ -320,41 +320,26 @@ def api_run_simulazione():
 
 
 # ======================= PREDIZIONI =======================
-@api.post("/api/predizioni")
-def api_predizioni():
-    data = request.json
-    anno = safe_int(data.get("anno"))
-    mese = safe_int(data.get("mese"))
-
-    start_date = datetime(anno, mese, 1)
-    if mese == 12:
-        next_month = datetime(anno + 1, 1, 1)
-    else:
-        next_month = datetime(anno, mese + 1, 1)
-    delta = (next_month - start_date).days
+@api.post("/api/predizioni-ace")
+def api_predizioni_ace(num_days=30):
+    start_date = datetime.strptime(request.json, "%Y-%m-%d")
 
     previsioni = []
-    for i in range(delta):
+    for i in range(num_days):
         date_str = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
         payload = {"date": date_str,
                    "layerid": "08|037|025|000|000"}
         result = requests.post("http://mobility-prediction:8080/predict", json=payload).json()
-        previsioni.append({"data": date_str, "turisti": result.get("prediction")})
+        previsioni.append({"data": date_str, "prediction": result.get("prediction")})
 
-    return jsonify({"anno": anno, "mese": mese, "previsioni": previsioni})
+    return previsioni
 
 
 @api.post("/api/predizioni-pedoni")
 def api_predizioni_pedoni(num_days=30):
-    """
-    Call the DailyPedestrianRequest service twice per day (Special=0 and Special=1)
-    and produce a final structure with two separate fields.
-    """
-
     start_date = datetime.strptime(request.json, "%Y-%m-%d")
 
     previsioni = []
-
     for i in range(num_days):
         giorno = start_date + timedelta(days=i)
         date_str = giorno.strftime("%Y-%m-%d")
@@ -381,7 +366,7 @@ def api_predizioni_pedoni(num_days=30):
 
         previsioni.append({
             "data": date_str,
-            "prediction_normal": pred0,
+            "prediction": pred0,
             "prediction_special": pred1
         })
 

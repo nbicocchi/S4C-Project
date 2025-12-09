@@ -160,10 +160,14 @@ async function generaPrevisioni(e) {
     }
 
     try {
-        const resp = await fetch("/api/predizioni", {
+        // Build date string "YYYY-MM-DD" for the first day of the month
+        const monthPadded = String(mese).padStart(2, "0");
+        const dataString = `${anno}-${monthPadded}-01`;
+
+        const resp = await fetch("/api/predizioni-pedoni", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ anno: parseInt(anno), mese: parseInt(mese) })
+            body: JSON.stringify(dataString)
         });
 
         if (!resp.ok) {
@@ -171,8 +175,7 @@ async function generaPrevisioni(e) {
             return;
         }
 
-        const data = await resp.json();
-        const previsioni = data.previsioni || [];
+        const previsioni = await resp.json();
 
         const resultsDiv = document.getElementById("results");
         resultsDiv.style.display = "block";
@@ -180,17 +183,21 @@ async function generaPrevisioni(e) {
         const tbody = document.getElementById("resultsBody");
         tbody.innerHTML = "";
 
+        // Fill table with both predictions
         previsioni.forEach(p => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${p.data}</td>
-                <td>${p.turisti ? p.turisti.toFixed(2) : "—"}</td>
+                <td>${p.prediction ? p.prediction.toFixed(2) : "—"}</td>
+                <td>${p.prediction_special ? p.prediction_special.toFixed(2) : "—"}</td>
             `;
             tbody.appendChild(tr);
         });
 
+        // Prepare chart labels and datasets
         const labels = previsioni.map(p => p.data);
-        const valori = previsioni.map(p => p.turisti);
+        const valori = previsioni.map(p => p.prediction);
+        const valoriSpecial = previsioni.map(p => p.prediction_special);
 
         if (chart) chart.destroy();
 
@@ -199,25 +206,38 @@ async function generaPrevisioni(e) {
             type: "line",
             data: {
                 labels: labels,
-                datasets: [{
-                    label: "Turisti previsti",
-                    data: valori,
-                    borderColor: "#2d89ef",
-                    backgroundColor: "rgba(45,137,239,0.1)",
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 3,
-                    pointBackgroundColor: "#2d89ef"
-                }]
+                datasets: [
+                    {
+                        label: "Pedoni previsti",
+                        data: valori,
+                        borderColor: "#2d89ef",
+                        backgroundColor: "rgba(45,137,239,0.1)",
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#2d89ef"
+                    },
+                    {
+                        label: "Pedoni speciali previsti",
+                        data: valoriSpecial,
+                        borderColor: "#ef5c2d",
+                        backgroundColor: "rgba(239,92,45,0.1)",
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#ef5c2d"
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { display: false },
+                    legend: { display: true },
                     title: {
                         display: true,
-                        text: `Previsioni turistiche - ${nomeMese} ${data.anno}`,
+                        text: `Previsioni pedoni - ${nomeMese} ${anno}`,
                         font: { size: 18 }
                     }
                 },
@@ -228,7 +248,7 @@ async function generaPrevisioni(e) {
                     },
                     y: {
                         beginAtZero: false,
-                        title: { display: true, text: "Numero di turisti" }
+                        title: { display: true, text: "Numero di pedoni" }
                     }
                 }
             }
@@ -242,6 +262,9 @@ async function generaPrevisioni(e) {
 
 document.getElementById("prevForm").addEventListener("submit", generaPrevisioni);
 </script>
+
+
+
 
 </body>
 </html>
