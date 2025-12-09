@@ -220,7 +220,7 @@
 
         // Carica dati simulazioni/parcheggi/linee
         try {
-            const resp = await fetch("/api/simulazioni");
+            const resp = await fetch("/simulazioni");
             const data = await resp.json();
 
             // Popola tabella sim
