@@ -40,24 +40,26 @@ def create_tables(engine):
 # -----------------------------
 # Funzione per caricare presenze
 # -----------------------------
-def load_presences(engine, items, folder_path):
-    connection = engine.connect()
+def load_presences(engine, items, folder_path, batch_size=500):
+    rows_ok = 0
+    rows_failed = 0
+
     metadata = MetaData()
     metadata.reflect(bind=engine)
     presences_table = metadata.tables["presences"]
 
-    rows_ok = 0
-    rows_failed = 0
-
     for zip_file in items:
         zip_path = os.path.join(folder_path, zip_file)
-        print(f"Elaborazione file: {zip_path}")
+        print(f"Processing file: {zip_path}")
+
         with zipfile.ZipFile(zip_path, 'r') as zf:
             for internal_file in zf.namelist():
                 with zf.open(internal_file) as csv_file:
                     reader = csv.reader((line.decode("utf-8").strip() for line in csv_file), delimiter=';')
                     match = re.search(r'\d{8}', internal_file)
                     data = datetime.strptime(match.group(0), "%Y%m%d").date()
+
+                    batch = []
                     for row in reader:
                         try:
                             row_dict = {
@@ -69,16 +71,34 @@ def load_presences(engine, items, folder_path):
                                 "n_presenze": int(float(row[5])) if row[5] else 0,
                                 "data_analisi": data
                             }
-                            connection.execute(presences_table.insert(), row_dict)
-                            connection.commit()
-                            rows_ok += 1
+                            batch.append(row_dict)
                         except Exception as e:
-                            print(f"Errore durante l'inserimento: {e}")
-                            connection.rollback()
+                            print(f"Skipping row due to error: {e}")
                             rows_failed += 1
 
-    connection.close()
-    print(f"Presenze inserite: {rows_ok}, inserimenti falliti: {rows_failed}")
+                        # Insert batch if batch_size reached
+                        if len(batch) >= batch_size:
+                            try:
+                                with engine.begin() as conn:  # automatic commit
+                                    conn.execute(presences_table.insert(), batch)
+                                rows_ok += len(batch)
+                            except Exception as e:
+                                print(f"Batch insert failed: {e}")
+                                rows_failed += len(batch)
+                            finally:
+                                batch = []
+
+                    # Insert any remaining rows
+                    if batch:
+                        try:
+                            with engine.begin() as conn:
+                                conn.execute(presences_table.insert(), batch)
+                            rows_ok += len(batch)
+                        except Exception as e:
+                            print(f"Final batch insert failed: {e}")
+                            rows_failed += len(batch)
+
+    print(f"Presenze inserted: {rows_ok}, failed: {rows_failed}")
 
 # -----------------------------
 # Funzione per caricare movimenti
@@ -117,15 +137,18 @@ def load_movements(engine, items, folder_path):
     connection.close()
     print("Movimenti caricati!")
 
-# -----------------------------
-# Esempio di utilizzo
-# -----------------------------
+## main
 engine = create_engine("postgresql://admin:admin123@localhost:5432/DozzaDB")
+
+metadata = MetaData()
+metadata.reflect(bind=engine)
+metadata.drop_all(engine)  # elimina tutte le tabelle
+print("All tables dropped!")
 
 # Create tables if missing
 create_tables(engine)
 
-folder_path_presences = "../AIRI/dozza_presenze"
+folder_path_presences = "../TIM/dozza_presenze"
 items_presences = os.listdir(folder_path_presences)
 load_presences(engine, items_presences, folder_path_presences)
 
