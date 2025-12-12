@@ -193,7 +193,7 @@
                 linee_escluse: [...form['linee_escluse[]'].selectedOptions].map(o=>o.value)
             };
 
-            const resp = await fetch('/api/sim', {
+            const resp = await fetch('/simulazioni/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -220,13 +220,14 @@
 
         // Carica dati simulazioni/parcheggi/linee
         try {
-            const resp = await fetch("/simulazioni");
-            const data = await resp.json();
+            const simResp = await fetch("/simulazioni/");
+            if (!simResp.ok) throw new Error("Errore simulazioni");
+            const simulazioni = await simResp.json();
 
             // Popola tabella sim
             const tbody = document.getElementById("simTableBody");
             tbody.innerHTML = "";
-            data.simulazioni.forEach(sim => {
+            simulazioni.forEach(sim => {
                 const tr = document.createElement("tr");
                 tbody.innerHTML += `
                 <tr>
@@ -241,15 +242,34 @@
             });
 
             // --- Popola select parcheggi e linee ---
-            const parcheggiSelect = document.querySelector("select[name='parcheggi_esclusi[]']");
-            const lineeSelect = document.querySelector("select[name='linee_escluse[]']");
+            const parcheggiResp = await fetch("/parcheggi/");
+            if (!parcheggiResp.ok) throw new Error("Errore parcheggi");
 
-            data.parcheggi.forEach(p => {
-                parcheggiSelect.innerHTML += `<option value="${p.id}">${p.nome} | ${p.comune}</option>`;
+            const parcheggi = await parcheggiResp.json();
+
+            const parcheggiSelect = document.querySelector("select[name='parcheggi_esclusi[]']");
+            parcheggiSelect.innerHTML = "";
+
+            parcheggi.forEach(p => {
+              parcheggiSelect.innerHTML += `
+                <option value="${p.id}">
+                  ${p.nome} | ${p.comune}
+                </option>`;
             });
 
-            data.linee.forEach(l => {
-                lineeSelect.innerHTML += `<option value="${l.id}">${l.nome} | ${l.comune_partenza}</option>`;
+            const lineeResp = await fetch("/linee/");
+            if (!lineeResp.ok) throw new Error("Errore linee");
+
+            const linee = await lineeResp.json();
+
+            const lineeSelect = document.querySelector("select[name='linee_escluse[]']");
+            lineeSelect.innerHTML = "";
+
+            linee.forEach(l => {
+              lineeSelect.innerHTML += `
+                <option value="${l.id}">
+                  ${l.nome} | ${l.comune_partenza}
+                </option>`;
             });
 
             // Reinizializza Select2 dopo aver caricato le opzioni
@@ -268,7 +288,7 @@
         async function eliminaSimulazione(simId) {
             if (!confirm("Sei sicuro di voler eliminare questa simulazione?")) return;
 
-            const resp = await fetch(`/api/simulazioni/${simId}`, {
+            const resp = await fetch(`/simulazioni/${simId}`, {
                 method: "DELETE"
             });
 
@@ -281,10 +301,8 @@
         }
 
         async function esportaSimulazione(simId) {
-            const response = await fetch("/api/simulazioni/esporta", {
+            const response = await fetch(`/simulazioni/${simId}/export`, {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({id: simId})
             });
 
             if (!response.ok) {
