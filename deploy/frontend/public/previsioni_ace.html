@@ -146,6 +146,7 @@
 
 <script>
 let chart = null;
+const DOZZA_LAYER_ID = "08|037|025|000|000";
 
 async function generaPrevisioni(e) {
     e.preventDefault();
@@ -160,18 +161,18 @@ async function generaPrevisioni(e) {
     }
 
     try {
-        // Create date string "YYYY-MM-DD" (day = 01)
-        const monthPadded = String(mese).padStart(2, "0");
-        const dataString = `${anno}-${monthPadded}-01`;
-
-        const resp = await fetch("/api/predizioni-ace", {
+        const resp = await fetch("http://localhost:8081/predict/month", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataString) // send a single date string
+            body: JSON.stringify({
+                year: anno,
+                month: mese,
+                layerid: DOZZA_LAYER_ID
+            })
         });
 
         if (!resp.ok) {
-            alert("Errore API");
+            alert("Errore nel microservizio di predizione");
             return;
         }
 
@@ -183,17 +184,17 @@ async function generaPrevisioni(e) {
         const tbody = document.getElementById("resultsBody");
         tbody.innerHTML = "";
 
-        data.forEach(p => {
+        data.predictions.forEach(p => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${p.data}</td>
+                <td>${p.date}</td>
                 <td>${p.prediction ? p.prediction.toFixed(2) : "—"}</td>
             `;
             tbody.appendChild(tr);
         });
 
-        const labels = data.map(p => p.data);
-        const valori = data.map(p => p.prediction);
+        const labels = data.predictions.map(p => p.date);
+        const valori = data.predictions.map(p => p.prediction);
 
         if (chart) chart.destroy();
 

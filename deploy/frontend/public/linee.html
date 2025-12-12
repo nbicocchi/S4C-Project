@@ -199,7 +199,7 @@
 
     <!-- JS LOGIC -->
     <script>
-        const baseURL = '/linee';
+        const baseURL = '/linee/';
 
         // Mostra un messaggio permanente sopra la tabella
         function showPermMessage(message, type='success') {
@@ -395,7 +395,7 @@
         // Dettagli linea
         async function mostraDettagli(id, tr) {
             try {
-                const res = await fetch(`/api/linee/${id}`);
+                const res = await fetch(`${baseURL}${id}`);
                 if (!res.ok) {
                     showPermMessage('Linea non trovata', 'error');
                     return;
@@ -426,7 +426,7 @@
         // Salva linea (PUT)
         async function salvaLinea(id, dati) {
             try {
-                const res = await fetch(`${baseURL}/${id}`, {
+                const res = await fetch(`${baseURL}${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dati)
@@ -444,7 +444,7 @@
         // Elimina linea (DELETE)
         async function eliminaLinea(id) {
             try {
-                const res = await fetch(`${baseURL}/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${baseURL}${id}`, { method: 'DELETE' });
                 if (!res.ok) {
                     showPermMessage('Errore eliminazione', 'error');
                 } else {

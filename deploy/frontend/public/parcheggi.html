@@ -166,7 +166,7 @@
     </body>
 
     <script>
-    const baseURL = '/parcheggi';
+    const baseURL = '/parcheggi/';
 
     // Mostra un messaggio permanente sopra la tabella
     function showPermMessage(message, type='success') {
@@ -309,7 +309,7 @@
 
     // Funzione per caricare e mostrare i dettagli di un parcheggio specifico
     async function mostraDettagli(id) {
-        const res = await fetch(`/api/parcheggi/${id}`);
+        const res = await fetch(`${baseURL}${id}`);
         if (!res.ok) {
             return showPermMessage('Parcheggio non trovato', 'error');
         }
@@ -331,7 +331,7 @@
 
     // Funzione salva parcheggio (PUT)
     async function salvaParcheggio(id, dati) {
-        const res = await fetch(`${baseURL}/${id}`, {
+        const res = await fetch(`${baseURL}${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dati)
@@ -345,7 +345,7 @@
 
     // Funzione elimina parcheggio (DELETE)
     async function eliminaParcheggio(id) {
-        const res = await fetch(`${baseURL}/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${baseURL}${id}`, { method: 'DELETE' });
         if (res.ok) {
             caricaParcheggi();
         } else {

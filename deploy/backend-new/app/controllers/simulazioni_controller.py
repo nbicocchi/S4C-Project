@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from repositories import simulazioni_repo
 from core.database import get_db
@@ -46,6 +47,24 @@ def delete_simulazione(simulazione_id: str, db: Session = Depends(get_db)):
     if not simulazione:
         raise HTTPException(status_code=404, detail="Simulazione not found")
     return simulazioni_repo.delete(db, simulazione)
+
+@router.post("/{simulazione_id}/export")
+def export_simulazione(simulazione_id: str, db: Session = Depends(get_db)):
+    """
+    Export a simulazione as a downloadable JSON file.
+    """
+    simulazione = simulazioni_repo.get_by_id(db, simulazione_id)
+    if not simulazione:
+        raise HTTPException(status_code=404, detail="Simulazione not found")
+
+    # Serializzazione sicura tramite schema Pydantic
+    export_data = Simulazione.model_validate(simulazione).model_dump()
+    return JSONResponse(
+        content=export_data,
+        headers={
+            "Content-Disposition": f'attachment; filename="simulazione_{simulazione_id}.json"'
+        }
+    )
 
 # --- Run simulation without saving ---
 @router.post("/run", response_model=Simulazione)

@@ -1,7 +1,10 @@
 /venv/
 __pycache__/
 ../.idea/
+.idea/
 /backend/db/linee.db
 /backend/db/parcheggi.db
 /backend/db/simulazioni.db
 /backend/db/utenti.db
+# Database locali
+*.sqlite3
