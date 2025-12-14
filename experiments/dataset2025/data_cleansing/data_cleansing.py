@@ -103,39 +103,67 @@ def load_presences(engine, items, folder_path, batch_size=500):
 # -----------------------------
 # Funzione per caricare movimenti
 # -----------------------------
-def load_movements(engine, items, folder_path):
-    connection = engine.connect()
+def load_movements(engine, items, folder_path, batch_size=500):
+    rows_ok = 0
+    rows_failed = 0
+
     metadata = MetaData()
     metadata.reflect(bind=engine)
     movements_table = metadata.tables["movements"]
 
     for zip_file in items:
         zip_path = os.path.join(folder_path, zip_file)
-        print(zip_path)
+        print(f"Processing file: {zip_path}")
+
         with zipfile.ZipFile(zip_path, 'r') as zf:
             for internal_file in zf.namelist():
                 with zf.open(internal_file) as csv_file:
                     reader = csv.reader((line.decode("utf-8").strip() for line in csv_file), delimiter=';')
+
+                    # Extract date from filename
                     match = re.search(r'\d{8}', internal_file)
                     data = datetime.strptime(match.group(0), "%Y%m%d").date()
+
+                    batch = []
                     for row in reader:
-                        row_dict = {
-                            "classe": row[0],
-                            "i": int(row[1]),
-                            "id_zonai": row[2],
-                            "id_zonaj": row[3],
-                            "spost_zonai_zonaj": int(float(row[4])),
-                            "data_analisi": data
-                        }
                         try:
-                            connection.execute(movements_table.insert(), row_dict)
-                            connection.commit()
-                            print("Riga inserita!")
+                            row_dict = {
+                                "classe": row[0] or "UNKNOWN",
+                                "i": int(float(row[1])) if row[1] else 0,
+                                "id_zonai": row[2] or "UNKNOWN",
+                                "id_zonaj": row[3] or "UNKNOWN",
+                                "spost_zonai_zonaj": int(float(row[4])) if row[4] else 0,
+                                "data_analisi": data
+                            }
+                            batch.append(row_dict)
                         except Exception as e:
-                            print(f"Errore durante l'inserimento: {e}")
-                            connection.rollback()
-    connection.close()
-    print("Movimenti caricati!")
+                            print(f"Skipping row due to error: {e}")
+                            rows_failed += 1
+
+                        # Insert batch if batch_size reached
+                        if len(batch) >= batch_size:
+                            try:
+                                with engine.begin() as conn:
+                                    conn.execute(movements_table.insert(), batch)
+                                rows_ok += len(batch)
+                            except Exception as e:
+                                print(f"Batch insert failed: {e}")
+                                rows_failed += len(batch)
+                            finally:
+                                batch = []
+
+                    # Insert any remaining rows
+                    if batch:
+                        try:
+                            with engine.begin() as conn:
+                                conn.execute(movements_table.insert(), batch)
+                            rows_ok += len(batch)
+                        except Exception as e:
+                            print(f"Final batch insert failed: {e}")
+                            rows_failed += len(batch)
+
+    print(f"Movements inserted: {rows_ok}, failed: {rows_failed}")
+
 
 ## main
 engine = create_engine("postgresql://admin:admin123@localhost:5432/DozzaDB")
@@ -152,6 +180,6 @@ folder_path_presences = "../TIM/dozza_presenze"
 items_presences = os.listdir(folder_path_presences)
 load_presences(engine, items_presences, folder_path_presences)
 
-#folder_path_movements = "../AIRI/dozza_spostamenti"
-#items_movements = os.listdir(folder_path_movements)
-#load_movements(engine, items_movements, folder_path_movements)
+folder_path_movements = "../TIM/dozza_spostamenti"
+items_movements = os.listdir(folder_path_movements)
+load_movements(engine, items_movements, folder_path_movements)
