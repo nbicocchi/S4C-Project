@@ -205,7 +205,41 @@
 
             const result = await resp.json();
             alert("✅ Simulazione avviata con successo!\nID: " + result.id);
-            location.reload();
+            const conferma = confirm("Vuoi salvare questa simulazione?");
+            if (conferma) {
+              const ok = await salvaSimulazione(result);
+              if (ok) location.reload();
+            }
+        }
+
+        async function salvaSimulazione(SIM) {
+            const payload = {
+              id: SIM.id,
+              data: SIM.data,
+              n_turisti: SIM.n_turisti,
+              risultato: JSON.stringify(SIM.risultato),
+              parcheggi_usati: JSON.stringify(SIM.parcheggi_usati),
+              linee_usate: JSON.stringify(SIM.linee_usate),
+              parcheggi_esclusi: JSON.stringify(SIM.parcheggi_esclusi),
+              linee_escluse: JSON.stringify(SIM.linee_escluse)
+            };
+
+            const resp = await fetch("/simulazioni/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+              alert("Errore durante il salvataggio della simulazione");
+              return;
+            }
+
+            const data = await resp.json();
+            console.log("Simulazione salvata:", data);
+            return true;
         }
     </script>
 

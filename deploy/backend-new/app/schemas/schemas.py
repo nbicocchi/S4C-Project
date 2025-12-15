@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 # ---------------- Linea ----------------
 class LineaBase(BaseModel):
@@ -45,7 +45,6 @@ class Parcheggio(ParcheggioBase):
 
 # ---------------- Simulazione ----------------
 class SimulazioneBase(BaseModel):
-    id: str
     data: str
     n_turisti: int
     risultato: Optional[str] = None
@@ -56,9 +55,11 @@ class SimulazioneBase(BaseModel):
     timestamp: Optional[str] = None
 
 class SimulazioneCreate(SimulazioneBase):
-    pass
+    id: Optional[str] = None
 
 class Simulazione(SimulazioneBase):
+    id: str
+    timestamp: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -68,3 +69,18 @@ class SimulazioneRunRequest(BaseModel):
     n_turisti: int
     parcheggi_esclusi: Optional[List[int]] = []
     linee_escluse: Optional[List[int]] = []
+
+class SimulazioneOut(BaseModel):
+    id: str
+    data: str
+    n_turisti: int
+    timestamp: Optional[str]
+
+    risultato: Dict[str, int]
+    parcheggi_usati: List[Dict[str, Any]]
+    linee_usate: List[Dict[str, Any]]
+    parcheggi_esclusi: List[Dict[str, Any]]
+    linee_escluse: List[Dict[str, Any]]
+
+    class Config:
+        from_attributes = True

@@ -28,7 +28,7 @@ def run_simulazione(db, data, n_turisti, parcheggi_esclusi_ids=None, linee_esclu
     # Esegui ottimizzazione
     output = ottimizza_risorse(parcheggi, linee, n_turisti)
 
-    sim_id = uuid.uuid4().hex  # shorter, still unique
+    sim_id = str(uuid.uuid4())  # shorter, still unique
     timestamp = datetime.now().isoformat(timespec="seconds")
 
     sim_obj = Simulazione(

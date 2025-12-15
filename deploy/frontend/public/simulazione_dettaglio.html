@@ -136,7 +136,7 @@
             }
 
             try {
-                const resp = await fetch(`/api/simulazioni/${simId}`);
+                const resp = await fetch(`/simulazioni/${simId}`);
                 if (!resp.ok) throw new Error("Errore API");
                 SIM = await resp.json();
 
@@ -242,10 +242,8 @@
             const simId = getSimIdFromURL();
 
             try {
-                const resp = await fetch(`/api/simulazioni/esporta`, {
+                const resp = await fetch(`/simulazioni/${simId}/export`, {
                     method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({id: simId})
                 });
 
                 if (!resp.ok) throw new Error("Errore esportazione");

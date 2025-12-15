@@ -3,9 +3,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from repositories import simulazioni_repo
 from core.database import get_db
-from schemas.schemas import Simulazione, SimulazioneCreate, SimulazioneRunRequest
+from schemas.schemas import Simulazione, SimulazioneCreate, SimulazioneRunRequest, SimulazioneOut
 from models.models import Simulazione as SimulazioneModel
 from service.simulation_service import run_simulazione
+import json, uuid
 
 router = APIRouter()
 
@@ -16,18 +17,50 @@ def read_simulazioni(skip: int = 0, limit: int = 100, db: Session = Depends(get_
     """Retrieve all simulazioni, with optional pagination."""
     return simulazioni_repo.get_all(db, skip, limit)
 
-@router.get("/{simulazione_id}", response_model=Simulazione)
+def safe_load(value, default):
+    if value is None:
+        return []
+    # già dict o list → ok
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            # se dopo il primo loads è ANCORA stringa → doppio JSON
+            if isinstance(parsed, str):
+                return json.loads(parsed)
+            return parsed
+        except json.JSONDecodeError:
+            return []
+    return []
+
+@router.get("/{simulazione_id}", response_model=SimulazioneOut)
 def read_simulazione(simulazione_id: str, db: Session = Depends(get_db)):
     """Retrieve a single simulazione by ID."""
     simulazione = simulazioni_repo.get_by_id(db, simulazione_id)
     if not simulazione:
         raise HTTPException(status_code=404, detail="Simulazione not found")
-    return simulazione
+    return {
+        "id": simulazione.id,
+        "data": simulazione.data,
+        "n_turisti": simulazione.n_turisti,
+        "timestamp": simulazione.timestamp,
+
+        "risultato": safe_load(simulazione.risultato, {}),
+        "parcheggi_usati": safe_load(simulazione.parcheggi_usati, []),
+        "linee_usate": safe_load(simulazione.linee_usate, []),
+        "parcheggi_esclusi": safe_load(simulazione.parcheggi_esclusi, []),
+        "linee_escluse": safe_load(simulazione.linee_escluse, []),
+    }
 
 @router.post("/", response_model=Simulazione)
 def create_simulazione(simulazione_in: SimulazioneCreate, db: Session = Depends(get_db)):
     """Create a new simulazione."""
-    simulazione = SimulazioneModel(**simulazione_in.dict())
+    sim_id = simulazione_in.id or str(uuid.uuid4())
+    simulazione = SimulazioneModel(
+        id=sim_id,
+        **simulazione_in.dict(exclude={"id"})
+    )
     return simulazioni_repo.create(db, simulazione)
 
 @router.put("/{simulazione_id}", response_model=Simulazione)
@@ -72,12 +105,12 @@ def api_run_simulazione(
     payload: SimulazioneRunRequest,  # Pydantic model for input
     db: Session = Depends(get_db)
 ):
-    # Call your simulation function
-    return run_simulazione(
+    result = run_simulazione(
         db=db,
         data=payload.data,
         n_turisti=payload.n_turisti,
         parcheggi_esclusi_ids=payload.parcheggi_esclusi or [],
         linee_escluse_ids=payload.linee_escluse or []
     )
+    return result.model_dump()
 
