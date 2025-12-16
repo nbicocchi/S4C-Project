@@ -11,26 +11,6 @@ services:
       timeout: 5s
       retries: 3
 
-  mobility-prediction:
-    build: mobility-prediction
-    ports:
-      - "8081:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-
-  pedestrian-prediction:
-    build: pedestrian-prediction
-    ports:
-      - "8082:8080"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-
   frontend:
     build: frontend
     depends_on:
@@ -38,3 +18,13 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+
+  prediction:
+    build: prediction
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3

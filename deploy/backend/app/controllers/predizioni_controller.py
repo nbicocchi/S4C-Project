@@ -14,53 +14,6 @@ class PredizioneRequest(BaseModel):
     start_date: str
     num_days: int = 30
 
-
-# ======================================================
-# Predizioni ACE
-# ======================================================
-
-@router.post("/ace")
-def api_predizioni_ace(payload: PredizioneRequest):
-    """
-    Restituisce le predizioni ACE a partire da una data iniziale.
-    """
-    try:
-        start_date = datetime.strptime(payload.start_date, "%Y-%m-%d")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Formato data non valido (YYYY-MM-DD)")
-
-    previsioni = []
-
-    for i in range(payload.num_days):
-        date_str = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
-
-        request_payload = {
-            "date": date_str,
-            "layerid": "08|037|025|000|000"
-        }
-
-        try:
-            response = requests.post(
-                "http://mobility-prediction:8080/predict",
-                json=request_payload,
-                timeout=10
-            )
-            response.raise_for_status()
-            result = response.json()
-        except requests.RequestException as e:
-            raise HTTPException(
-                status_code=502,
-                detail=f"Errore chiamando mobility-prediction: {e}"
-            )
-
-        previsioni.append({
-            "data": date_str,
-            "prediction": result
-        })
-
-    return previsioni
-
-
 # ======================================================
 # Predizioni Pedoni
 # ======================================================
@@ -85,8 +38,8 @@ def api_predizioni_pedoni(payload: PredizioneRequest):
         try:
             # special = 0
             resp0 = requests.post(
-                "http://pedestrian-prediction:8080/predict",
-                json={"date": date_str, "special": 0},
+                "http://prediction:8080/predict",
+                json={"date": date_str, "anomaly": 0},
                 timeout=10
             )
             resp0.raise_for_status()
@@ -94,8 +47,8 @@ def api_predizioni_pedoni(payload: PredizioneRequest):
 
             # special = 1
             resp1 = requests.post(
-                "http://pedestrian-prediction:8080/predict",
-                json={"date": date_str, "special": 1},
+                "http://prediction:8080/predict",
+                json={"date": date_str, "anomaly": 3},
                 timeout=10
             )
             resp1.raise_for_status()
