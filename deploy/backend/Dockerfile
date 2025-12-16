@@ -17,10 +17,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
-COPY . .
+COPY app /app/
 
 # Expose port
 EXPOSE 8080
 
-# Start the Flask app with Gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8080", "app.main:app"]
+# Run the app
+CMD ["python", "/app/main.py"]

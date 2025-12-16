@@ -1,15 +1,23 @@
 import uuid
 from datetime import datetime
+import json
 from geopy.distance import geodesic
-from .utils import *
-from .geoutils import to_float, sono_vicini
+from schemas.schemas import Simulazione
+from utils.geoutils import are_close, to_float
+from repositories import parcheggi_repo, linee_repo  # adjust import paths
+from schemas.schemas import Parcheggio, Linea
 
+def run_simulazione(db, data, n_turisti, parcheggi_esclusi_ids=None, linee_escluse_ids=None):
+    # Load all parcheggi and linee
+    parcheggi = [
+        Parcheggio.model_validate(p).model_dump()
+        for p in parcheggi_repo.get_all(db, skip=0, limit=1000)
+    ]
 
-def run_simulazione(data, n_turisti, parcheggi_esclusi_ids, linee_escluse_ids):
-    """Esegue la simulazione e ritorna (sim_id, sim_doc) senza salvare nulla nel DB."""
-
-    parcheggi = load_parcheggi()
-    linee = load_linee()
+    linee = [
+        Linea.model_validate(l).model_dump()
+        for l in linee_repo.get_all(db, skip=0, limit=1000)
+    ]
 
     # Filtra esclusi
     parcheggi_esclusi = [p for p in parcheggi if str(p["id"]) in parcheggi_esclusi_ids]
@@ -20,22 +28,22 @@ def run_simulazione(data, n_turisti, parcheggi_esclusi_ids, linee_escluse_ids):
     # Esegui ottimizzazione
     output = ottimizza_risorse(parcheggi, linee, n_turisti)
 
-    sim_id = str(uuid.uuid4())
-    timestamp = datetime.now().isoformat()
+    sim_id = str(uuid.uuid4())  # shorter, still unique
+    timestamp = datetime.now().isoformat(timespec="seconds")
 
-    sim_doc = {
-        "id": sim_id,
-        "data": data,
-        "n_turisti": n_turisti,
-        "risultato": output["risultato"],
-        "parcheggi_usati": output["parcheggi_usati"],
-        "linee_usate": output["linee_usate"],
-        "parcheggi_esclusi": parcheggi_esclusi,
-        "linee_escluse": linee_escluse,
-        "timestamp": timestamp
-    }
+    sim_obj = Simulazione(
+        id=sim_id,
+        data=data,
+        n_turisti=n_turisti,
+        risultato=json.dumps(output["risultato"]),
+        parcheggi_usati=json.dumps(output["parcheggi_usati"]),
+        linee_usate=json.dumps(output["linee_usate"]),
+        parcheggi_esclusi=json.dumps(parcheggi_esclusi_ids),
+        linee_escluse=json.dumps(linee_escluse_ids),
+        timestamp=timestamp
+    )
 
-    return sim_id, sim_doc
+    return sim_obj
 
 
 def ottimizza_risorse(parcheggi, linee, n_turisti):
@@ -51,7 +59,7 @@ def ottimizza_risorse(parcheggi, linee, n_turisti):
         lat_p, lng_p = to_float(p['latitudine']), to_float(p['longitudine'])
         for linea in linee:
             lat_l, lng_l = to_float(linea['partenza_lat']), to_float(linea['partenza_lng'])
-            if sono_vicini(lat_p, lng_p, lat_l, lng_l, soglia_m=1000):
+            if are_close(lat_p, lng_p, lat_l, lng_l, soglia_m=1000):
                 linee_per_parcheggio.setdefault(p['id'], []).append(linea)
 
     # Distanze da Dozza

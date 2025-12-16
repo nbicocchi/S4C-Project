@@ -147,7 +147,7 @@
 <script>
 let chart = null;
 
-async function generaPrevisioni(e) {
+async function generaPrevisioniACE(e) {
     e.preventDefault();
 
     const anno = document.getElementById("anno").value;
@@ -160,42 +160,55 @@ async function generaPrevisioni(e) {
     }
 
     try {
-        // Create date string "YYYY-MM-DD" (day = 01)
+        // Costruisci la data "YYYY-MM-DD" (primo giorno del mese)
         const monthPadded = String(mese).padStart(2, "0");
         const dataString = `${anno}-${monthPadded}-01`;
 
-        const resp = await fetch("/api/predizioni-ace", {
+        // Payload come oggetto JSON
+        const payload = {
+            start_date: dataString,
+            num_days: 30 // opzionale
+        };
+
+        // Chiamata API
+        const resp = await fetch("/predizioni/ace/", { // senza slash finale
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataString) // send a single date string
+            body: JSON.stringify(payload)
         });
 
         if (!resp.ok) {
+            const text = await resp.text();
+            console.error("Errore API:", resp.status, text);
             alert("Errore API");
             return;
         }
 
-        const data = await resp.json();
+        const previsioniAce = await resp.json(); // leggi body una sola volta
+        console.log(previsioniAce);
 
+        // Mostra div risultati
         const resultsDiv = document.getElementById("results");
         resultsDiv.style.display = "block";
 
+        // Aggiorna tabella
         const tbody = document.getElementById("resultsBody");
         tbody.innerHTML = "";
 
-        data.forEach(p => {
+        previsioniAce.forEach(p => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${p.data}</td>
-                <td>${p.prediction ? p.prediction.toFixed(2) : "—"}</td>
+                <td>${p.prediction?.toFixed(2) ?? "—"}</td>
             `;
             tbody.appendChild(tr);
         });
 
-        const labels = data.map(p => p.data);
-        const valori = data.map(p => p.prediction);
+        // Prepara dati per il grafico
+        const labels = previsioniAce.map(p => p.data);
+        const valori = previsioniAce.map(p => p.prediction);
 
-        if (chart) chart.destroy();
+        if (chart) chart.destroy(); // distruggi grafico precedente
 
         const ctx = document.getElementById("chartPrevisioni").getContext("2d");
         chart = new Chart(ctx, {
@@ -220,7 +233,7 @@ async function generaPrevisioni(e) {
                     legend: { display: false },
                     title: {
                         display: true,
-                        text: `Previsioni turistiche - ${nomeMese} ${anno}`, // fixed title
+                        text: `Previsioni turistiche - ${nomeMese} ${anno}`,
                         font: { size: 18 }
                     }
                 },
@@ -239,12 +252,13 @@ async function generaPrevisioni(e) {
 
     } catch (err) {
         console.error("Errore:", err);
-        alert("Errore durante la generazione delle previsioni.");
+        alert(`Errore durante la generazione delle previsioni:\n${err.message}`);
     }
 }
 
-document.getElementById("prevForm").addEventListener("submit", generaPrevisioni);
+document.getElementById("prevForm").addEventListener("submit", generaPrevisioniACE);
 </script>
+
 
 
 </body>

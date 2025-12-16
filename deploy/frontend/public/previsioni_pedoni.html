@@ -160,22 +160,28 @@ async function generaPrevisioni(e) {
     }
 
     try {
-        // Build date string "YYYY-MM-DD" for the first day of the month
+        // Costruisci la data
         const monthPadded = String(mese).padStart(2, "0");
         const dataString = `${anno}-${monthPadded}-01`;
 
-        const resp = await fetch("/api/predizioni-pedoni", {
+        // Costruisci payload come oggetto
+        const payload = {
+            start_date: dataString,
+            num_days: 30  // opzionale, default 30
+        };
+
+        const resp = await fetch("/predizioni/pedoni/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataString)
+            body: JSON.stringify(payload)
         });
+
+        const previsioni = await resp.json();
 
         if (!resp.ok) {
             alert("Errore API");
             return;
         }
-
-        const previsioni = await resp.json();
 
         const resultsDiv = document.getElementById("results");
         resultsDiv.style.display = "block";

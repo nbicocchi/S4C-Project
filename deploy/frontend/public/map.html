@@ -101,24 +101,6 @@
             </div>
 
     <script>
-        // LOGOUT
-        async function logout() {
-            await fetch("/api/logout", { method: "POST" });
-            window.location.href = "login.html";
-        }
-
-        // ADMIN CHECK
-        async function checkAdmin() {
-            const resp = await fetch("/api/userinfo");
-            if (!resp.ok) return;
-
-            const data = await resp.json();
-            if (data.ruolo === "admin") {
-                document.getElementById("admin-section").style.display = "block";
-            }
-        }
-        checkAdmin();
-
         // MAP LOGIC
         $(document).ready(function () {
             // Inizializza la mappa
@@ -128,7 +110,7 @@
             }).addTo(map);
 
             // Chiamata al backend per ottenere dati JSON
-            $.getJSON('/api/mappa/dati')
+            $.getJSON('/mappa')
                 .done(function (data) {
                     // Centra mappa sulla prima coordinata di parcheggio o punto medio
                     if (data.parcheggi.length > 0) {
